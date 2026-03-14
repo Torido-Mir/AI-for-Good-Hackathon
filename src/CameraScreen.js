@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
-export default function CameraScreen({ onPhotoCaptured }) {
+export default function CameraScreen({ onPhotoCaptured, onBack }) {
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -45,7 +45,13 @@ export default function CameraScreen({ onPhotoCaptured }) {
       >
         <SafeAreaView style={styles.overlay}>
           <View style={styles.topBar}>
+            {onBack ? (
+              <TouchableOpacity style={styles.backButton} onPress={onBack}>
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+            ) : null}
             <Text style={styles.title}>Object Detector</Text>
+            {onBack ? <View style={styles.backButtonSpacer} /> : null}
           </View>
           <View style={styles.bottomBar}>
             <TouchableOpacity style={styles.snapButton} onPress={handleSnap}>
@@ -63,12 +69,30 @@ const styles = StyleSheet.create({
   camera: { flex: 1 },
   overlay: { flex: 1, justifyContent: 'space-between' },
   topBar: {
-    paddingTop: 16, paddingHorizontal: 20, alignItems: 'center',
+    paddingTop: 16,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
     color: '#fff', fontSize: 20, fontWeight: 'bold',
     textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
+  },
+  backButton: {
+    backgroundColor: 'rgba(15, 52, 96, 0.85)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  backButtonSpacer: {
+    width: 58,
   },
   bottomBar: {
     paddingBottom: 40, alignItems: 'center',

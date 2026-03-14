@@ -35,6 +35,12 @@
         {
           "cameraPermission": "Allow Object Detector to access your camera to capture photos for object detection."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Object Detector to access your photos to run object detection on uploaded images."
+        }
       ]
     ],
     "assetBundlePatterns": [

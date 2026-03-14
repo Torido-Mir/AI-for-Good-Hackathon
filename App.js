@@ -1,12 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, Text, ActivityIndicator, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as ImagePicker from 'expo-image-picker';
+import HomeScreen from './src/HomeScreen';
 import CameraScreen from './src/CameraScreen';
 import ResultScreen from './src/ResultScreen';
 import { runDetection } from './src/detector';
 
 export default function App() {
-  const [screen, setScreen] = useState('camera');
+  const [screen, setScreen] = useState('home');
   const [photoUri, setPhotoUri] = useState(null);
   const [photoSize, setPhotoSize] = useState({ width: 0, height: 0 });
   const [detections, setDetections] = useState([]);
@@ -28,10 +30,33 @@ export default function App() {
     }
   }, []);
 
-  const handleBackToCamera = useCallback(() => {
+  const handleUploadPhoto = useCallback(async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('Permission Required', 'Please allow photo library access to upload an image.');
+      return;
+    }
+
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      quality: 0.9,
+    });
+
+    if (picked.canceled || !picked.assets?.length) {
+      return;
+    }
+
+    const asset = picked.assets[0];
+    handlePhotoCaptured(asset.uri, asset.width || 0, asset.height || 0);
+  }, [handlePhotoCaptured]);
+
+  const handleBackToHome = useCallback(() => {
     setPhotoUri(null);
     setDetections([]);
-    setScreen('camera');
+    setPhotoSize({ width: 0, height: 0 });
+    setScreen('home');
   }, []);
 
   if (screen === 'loading') {
@@ -52,7 +77,19 @@ export default function App() {
           photoUri={photoUri}
           photoSize={photoSize}
           detections={detections}
-          onBack={handleBackToCamera}
+          onBack={handleBackToHome}
+        />
+      </>
+    );
+  }
+
+  if (screen === 'camera') {
+    return (
+      <>
+        <StatusBar style="light" />
+        <CameraScreen
+          onPhotoCaptured={handlePhotoCaptured}
+          onBack={handleBackToHome}
         />
       </>
     );
@@ -61,7 +98,10 @@ export default function App() {
   return (
     <>
       <StatusBar style="light" />
-      <CameraScreen onPhotoCaptured={handlePhotoCaptured} />
+      <HomeScreen
+        onOpenCamera={() => setScreen('camera')}
+        onUploadPhoto={handleUploadPhoto}
+      />
     </>
   );
 }

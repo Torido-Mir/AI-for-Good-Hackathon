@@ -85,7 +85,7 @@ export default function ResultScreen({ photoUri, photoSize, detections, onBack }
       </View>
 
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backButtonText}>Back to Camera</Text>
+        <Text style={styles.backButtonText}>Back to Home</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

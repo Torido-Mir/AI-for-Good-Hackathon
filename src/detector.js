@@ -1,4 +1,4 @@
-const SERVER_URL = "http://10.36.51.45";
+const SERVER_URL = "http://10.36.39.104:8000";
 
 export async function runDetection(photoUri) {
   const formData = new FormData();
