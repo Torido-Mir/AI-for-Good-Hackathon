@@ -1,17 +1,19 @@
 import os
 from dotenv import load_dotenv
-# create your .env.local
-from openai import OpenAI
+
+try:
+    # create your .env.local
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 
 # Load OpenAI API key
 load_dotenv(".env.local")
 api_key = os.getenv("OPENAI_API_KEY")
 
-if not api_key:
-    raise ValueError("OPENAI_API_KEY not found in .env.local")
-
-# Initialize OpenAI client
-client = OpenAI(api_key=api_key)
+client = None
+if api_key and OpenAI is not None:
+    client = OpenAI(api_key=api_key)
 
 def generate_example_sentences(object_name: str, num_sentences: int = 1):
     """
