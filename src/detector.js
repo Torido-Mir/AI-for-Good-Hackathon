@@ -1,6 +1,10 @@
-const SERVER_URL = "http://10.36.39.104:8000";
+const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
 export async function runDetection(photoUri) {
+  if (!SERVER_URL) {
+    throw new Error("Missing EXPO_PUBLIC_SERVER_URL. Add it to your .env.local file.");
+  }
+
   const formData = new FormData();
   formData.append("file", {
     uri: photoUri,
