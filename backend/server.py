@@ -16,6 +16,7 @@ from transformers import AutoTokenizer, VitsModel, Wav2Vec2ForCTC, Wav2Vec2Proce
 from ultralytics import YOLO
 from PIL import Image
 import uvicorn
+from dotenv import load_dotenv
 
 app = FastAPI()
 
@@ -23,6 +24,8 @@ OPENROUTER_MODEL = "google/gemini-3-pro-preview"
 TTS_MODEL_ID = "facebook/mms-tts-rhg"
 ASR_MODEL_ID = "facebook/mms-1b-all"
 ROHINGYA_LANG = "rhg"
+
+load_dotenv()
 
 app.add_middleware(
     CORSMiddleware,
