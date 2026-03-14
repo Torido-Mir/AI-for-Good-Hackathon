@@ -17,6 +17,11 @@ app.add_middleware(
 model = YOLO("yolov8n.pt")
 
 
+@app.get("/")
+async def health():
+    return {"status": "ok", "model": "yolov8n"}
+
+
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
     contents = await file.read()
