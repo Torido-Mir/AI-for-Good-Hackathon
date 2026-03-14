@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { Audio } from 'expo-av';
+import * as Audio from 'expo-audio';
 import {
   englishSpeechBase64ToUri,
   getRohingyaSentenceAudio,
@@ -18,13 +18,13 @@ async function playUri(uri, soundRef) {
     throw new Error('No audio available.');
   }
 
-  if (soundRef.current) {
-    await soundRef.current.unloadAsync();
-    soundRef.current = null;
+  if (!soundRef.current) {
+    soundRef.current = Audio.createAudioPlayer({ uri });
+  } else {
+    soundRef.current.replace({ uri });
   }
 
-  const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
-  soundRef.current = sound;
+  soundRef.current.play();
 }
 
 export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack }) {
@@ -43,7 +43,8 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
   useEffect(() => {
     return () => {
       if (soundRef.current) {
-        soundRef.current.unloadAsync();
+        soundRef.current.remove();
+        soundRef.current = null;
       }
     };
   }, []);

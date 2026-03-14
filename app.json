@@ -41,7 +41,8 @@
         {
           "photosPermission": "Allow Object Detector to access your photos to run object detection on uploaded images."
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "assetBundlePatterns": [
       "assets/**"

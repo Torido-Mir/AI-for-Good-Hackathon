@@ -1,6 +1,7 @@
 import functools
 import io
 import os
+from pathlib import Path
 from gtts import gTTS
 import base64
 
@@ -26,6 +27,9 @@ ASR_MODEL_ID = "facebook/mms-1b-all"
 ROHINGYA_LANG = "rhg"
 
 load_dotenv()
+BACKEND_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BACKEND_DIR.parent
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env.local")
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,7 +52,10 @@ class RhgAudioToEnglishResponse(BaseModel):
 def _get_api_key() -> str:
     api_key = os.getenv("OPENROUTER_API")
     if not api_key:
-        raise RuntimeError("Set OPENROUTER_API environment variable.")
+        raise RuntimeError(
+            "Missing OPENROUTER_API. Set it in .env.local at project root "
+            "or export it in your shell environment."
+        )
     return api_key
 
 
