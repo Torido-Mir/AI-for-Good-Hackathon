@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import HomeScreen from './src/HomeScreen';
 import CameraScreen from './src/CameraScreen';
 import ResultScreen from './src/ResultScreen';
+import LanguageScreen from './src/LanguageScreen';
 import { runDetection } from './src/detector';
 
 function normalizeDetections(result, fallbackWidth, fallbackHeight) {
@@ -13,6 +14,8 @@ function normalizeDetections(result, fallbackWidth, fallbackHeight) {
       detections: result.detections,
       imageWidth: result.imageWidth || fallbackWidth,
       imageHeight: result.imageHeight || fallbackHeight,
+      objectWord: result.detections?.[0]?.label || '',
+      englishSpeechBase64: result.speech || '',
     };
   }
 
@@ -21,6 +24,8 @@ function normalizeDetections(result, fallbackWidth, fallbackHeight) {
       detections: [],
       imageWidth: fallbackWidth,
       imageHeight: fallbackHeight,
+      objectWord: '',
+      englishSpeechBase64: '',
     };
   }
 
@@ -50,6 +55,8 @@ function normalizeDetections(result, fallbackWidth, fallbackHeight) {
     detections,
     imageWidth,
     imageHeight,
+    objectWord: result.word || '',
+    englishSpeechBase64: result.speech || '',
   };
 }
 
@@ -58,6 +65,8 @@ export default function App() {
   const [photoUri, setPhotoUri] = useState(null);
   const [photoSize, setPhotoSize] = useState({ width: 0, height: 0 });
   const [detections, setDetections] = useState([]);
+  const [objectWord, setObjectWord] = useState('');
+  const [englishSpeechBase64, setEnglishSpeechBase64] = useState('');
 
   const handlePhotoCaptured = useCallback(async (uri, width, height) => {
     setPhotoUri(uri);
@@ -69,6 +78,8 @@ export default function App() {
       const normalized = normalizeDetections(result, width, height);
       setDetections(normalized.detections);
       setPhotoSize({ width: normalized.imageWidth, height: normalized.imageHeight });
+      setObjectWord(normalized.objectWord);
+      setEnglishSpeechBase64(normalized.englishSpeechBase64);
       setScreen('results');
     } catch (err) {
       console.error('Detection failed:', err);
@@ -103,6 +114,8 @@ export default function App() {
     setPhotoUri(null);
     setDetections([]);
     setPhotoSize({ width: 0, height: 0 });
+    setObjectWord('');
+    setEnglishSpeechBase64('');
     setScreen('home');
   }, []);
 
@@ -124,7 +137,21 @@ export default function App() {
           photoUri={photoUri}
           photoSize={photoSize}
           detections={detections}
+          onNext={() => setScreen('language')}
           onBack={handleBackToHome}
+        />
+      </>
+    );
+  }
+
+  if (screen === 'language') {
+    return (
+      <>
+        <StatusBar style="light" />
+        <LanguageScreen
+          objectWord={objectWord}
+          englishSpeechBase64={englishSpeechBase64}
+          onBack={() => setScreen('results')}
         />
       </>
     );

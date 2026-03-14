@@ -14,7 +14,7 @@ function getColor(classIndex) {
   return BOX_COLORS[classIndex % BOX_COLORS.length];
 }
 
-export default function ResultScreen({ photoUri, photoSize, detections, onBack }) {
+export default function ResultScreen({ photoUri, photoSize, detections, onBack, onNext }) {
   const { width: screenWidth } = useWindowDimensions();
   const sourceWidth = photoSize?.width || 1;
   const sourceHeight = photoSize?.height || 1;
@@ -93,6 +93,10 @@ export default function ResultScreen({ photoUri, photoSize, detections, onBack }
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
         <Text style={styles.backButtonText}>Back to Camera</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.nextButton} onPress={onNext}>
+        <Text style={styles.nextButtonText}>&gt;&gt;</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -122,5 +126,21 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: '#ffffff', fontSize: 18, fontWeight: 'bold',
+  },
+  nextButton: {
+    position: 'absolute',
+    right: 16,
+    top: 22,
+    backgroundColor: '#e94560',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nextButtonText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 });
