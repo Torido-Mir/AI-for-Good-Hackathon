@@ -28,8 +28,17 @@ async function playUri(uri, soundRef) {
   soundRef.current.play();
 }
 
-export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack }) {
+export default function LanguageScreen({
+  photoUri,
+  objectWord,
+  englishSpeechBase64,
+  exampleSentence,
+  exampleSentenceSpeechBase64,
+  onBack,
+}) {
   const soundRef = useRef(null);
+  const [loadingRohingyaWord, setLoadingRohingyaWord] = useState(false);
+  const [rohingyaWordAudioUri, setRohingyaWordAudioUri] = useState(null);
   const [loadingRohingya, setLoadingRohingya] = useState(false);
   const [rohingyaText, setRohingyaText] = useState('');
   const [rohingyaAudioUri, setRohingyaAudioUri] = useState(null);
@@ -37,9 +46,14 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
   const englishWord = objectWord || 'object';
 
   const learningSentence = useMemo(
-    () => `This is a ${englishWord}. In English, this is a ${englishWord}.`,
-    [englishWord],
+    () => (exampleSentence || '').trim() || `This is a ${englishWord}. In English, this is a ${englishWord}.`,
+    [englishWord, exampleSentence],
   );
+
+  useEffect(() => {
+    setRohingyaText('');
+    setRohingyaAudioUri(null);
+  }, [learningSentence]);
 
   useEffect(() => {
     return () => {
@@ -52,12 +66,42 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
 
   const handlePlayEnglish = useCallback(async () => {
     try {
-      const englishAudioUri = englishSpeechBase64ToUri(englishSpeechBase64);
+      const englishAudioUri = englishSpeechBase64ToUri(
+        exampleSentenceSpeechBase64 || englishSpeechBase64,
+      );
       await playUri(englishAudioUri, soundRef);
     } catch (err) {
-      Alert.alert('🔊 Audio Error', err.message || 'Could not play English audio.');
+      Alert.alert('🔊 Audio Error', err.message || 'Could not play English sentence audio.');
+    }
+  }, [englishSpeechBase64, exampleSentenceSpeechBase64]);
+
+  const handlePlayEnglishWord = useCallback(async () => {
+    try {
+      const englishWordAudioUri = englishSpeechBase64ToUri(englishSpeechBase64);
+      await playUri(englishWordAudioUri, soundRef);
+    } catch (err) {
+      Alert.alert('🔊 Audio Error', err.message || 'Could not play English word audio.');
     }
   }, [englishSpeechBase64]);
+
+  const handlePlayRohingyaWord = useCallback(async () => {
+    try {
+      setLoadingRohingyaWord(true);
+
+      let audioUri = rohingyaWordAudioUri;
+      if (!audioUri) {
+        const result = await getRohingyaSentenceAudio(englishWord);
+        audioUri = result.audioUri;
+        setRohingyaWordAudioUri(result.audioUri);
+      }
+
+      await playUri(audioUri, soundRef);
+    } catch (err) {
+      Alert.alert('🔊 Audio Error', err.message || 'Could not play Rohingya word audio.');
+    } finally {
+      setLoadingRohingyaWord(false);
+    }
+  }, [englishWord, rohingyaWordAudioUri]);
 
   const handlePlayRohingyaSentence = useCallback(async () => {
     try {
@@ -82,6 +126,11 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+        {photoUri ? (
+          <View style={styles.thumbnailContainer}>
+            <Image source={{ uri: photoUri }} style={styles.thumbnail} resizeMode="cover" />
+          </View>
+        ) : null}
         <Text style={styles.heading}>🎯 Detected Object</Text>
         <Text style={styles.objectWord}>{englishWord}</Text>
 
@@ -90,8 +139,27 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
           <Text style={styles.value}>{englishWord}</Text>
         </View>
 
+        <TouchableOpacity style={styles.primaryButton} onPress={handlePlayEnglishWord}>
+          <Text style={styles.buttonText}>🔊 Play English Word</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={handlePlayRohingyaWord}
+          disabled={loadingRohingyaWord}
+        >
+          <Text style={styles.buttonText}>
+            {loadingRohingyaWord ? '⏳ Preparing Rohingya Word...' : '🗣️ Say Word in Rohingya'}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.infoCard}>
+          <Text style={styles.label}>📝 Example sentence</Text>
+          <Text style={styles.value}>{learningSentence}</Text>
+        </View>
+
         <TouchableOpacity style={styles.primaryButton} onPress={handlePlayEnglish}>
-          <Text style={styles.buttonText}>🔊 Play English Sound</Text>
+          <Text style={styles.buttonText}>🔊 Play English Sentence</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -103,16 +171,6 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
             {loadingRohingya ? '⏳ Preparing Rohingya Audio...' : '🗣️ Say Sentence in Rohingya'}
           </Text>
         </TouchableOpacity>
-
-        {rohingyaText ? (
-          <View style={styles.infoCard}>
-            <View style={styles.labelRow}>
-              <Image source={require('../assets/rhg_flag.png')} style={styles.rhgFlag} resizeMode="contain" />
-              <Text style={styles.label}>Rohingya text</Text>
-            </View>
-            <Text style={styles.value}>{rohingyaText}</Text>
-          </View>
-        ) : null}
       </View>
 
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
@@ -131,6 +189,17 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 18,
+  },
+  thumbnailContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  thumbnail: {
+    width: 88,
+    height: 88,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#0f3460',
   },
   heading: {
     color: '#c9c9d6',

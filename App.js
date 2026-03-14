@@ -9,6 +9,9 @@ import LanguageScreen from './src/LanguageScreen';
 import { runDetection } from './src/detector';
 
 function normalizeDetections(result, fallbackWidth, fallbackHeight) {
+  const sentence = String(result?.sentence || '');
+  const sentenceSpeechBase64 = String(result?.sentence_speech || result?.sentenceSpeech || '');
+
   if (Array.isArray(result?.detections)) {
     return {
       detections: result.detections,
@@ -16,6 +19,8 @@ function normalizeDetections(result, fallbackWidth, fallbackHeight) {
       imageHeight: result.imageHeight || fallbackHeight,
       objectWord: result.detections?.[0]?.label || '',
       englishSpeechBase64: result.speech || '',
+      exampleSentence: sentence,
+      exampleSentenceSpeechBase64: sentenceSpeechBase64,
     };
   }
 
@@ -26,6 +31,8 @@ function normalizeDetections(result, fallbackWidth, fallbackHeight) {
       imageHeight: fallbackHeight,
       objectWord: '',
       englishSpeechBase64: '',
+      exampleSentence: sentence,
+      exampleSentenceSpeechBase64: sentenceSpeechBase64,
     };
   }
 
@@ -57,6 +64,8 @@ function normalizeDetections(result, fallbackWidth, fallbackHeight) {
     imageHeight,
     objectWord: result.word || '',
     englishSpeechBase64: result.speech || '',
+    exampleSentence: sentence,
+    exampleSentenceSpeechBase64: sentenceSpeechBase64,
   };
 }
 
@@ -67,6 +76,8 @@ export default function App() {
   const [detections, setDetections] = useState([]);
   const [objectWord, setObjectWord] = useState('');
   const [englishSpeechBase64, setEnglishSpeechBase64] = useState('');
+  const [exampleSentence, setExampleSentence] = useState('');
+  const [exampleSentenceSpeechBase64, setExampleSentenceSpeechBase64] = useState('');
 
   const handlePhotoCaptured = useCallback(async (uri, width, height) => {
     setPhotoUri(uri);
@@ -80,6 +91,8 @@ export default function App() {
       setPhotoSize({ width: normalized.imageWidth, height: normalized.imageHeight });
       setObjectWord(normalized.objectWord);
       setEnglishSpeechBase64(normalized.englishSpeechBase64);
+      setExampleSentence(normalized.exampleSentence);
+      setExampleSentenceSpeechBase64(normalized.exampleSentenceSpeechBase64);
       setScreen('results');
     } catch (err) {
       console.error('Detection failed:', err);
@@ -116,6 +129,8 @@ export default function App() {
     setPhotoSize({ width: 0, height: 0 });
     setObjectWord('');
     setEnglishSpeechBase64('');
+    setExampleSentence('');
+    setExampleSentenceSpeechBase64('');
     setScreen('home');
   }, []);
 
@@ -157,8 +172,11 @@ export default function App() {
       <>
         <StatusBar style="light" />
         <LanguageScreen
+          photoUri={photoUri}
           objectWord={objectWord}
           englishSpeechBase64={englishSpeechBase64}
+          exampleSentence={exampleSentence}
+          exampleSentenceSpeechBase64={exampleSentenceSpeechBase64}
           onBack={() => setScreen('results')}
         />
       </>

@@ -19,6 +19,8 @@ from PIL import Image
 import uvicorn
 from dotenv import load_dotenv
 
+from ran_sent_gen import generate_example_sentences
+
 app = FastAPI()
 
 OPENROUTER_MODEL = "google/gemini-3-pro-preview"
@@ -50,11 +52,17 @@ class RhgAudioToEnglishResponse(BaseModel):
 
 
 def _get_api_key() -> str:
-    api_key = os.getenv("OPENROUTER_API")
+    api_key = (
+        os.getenv("OPENROUTER_API")
+        or os.getenv("OPENROUTER_API_KEY")
+        or os.getenv("OPENAI_API_KEY")
+        or ""
+    )
+    api_key = api_key.strip().strip('"').strip("'")
     if not api_key:
         raise RuntimeError(
-            "Missing OPENROUTER_API. Set it in .env.local at project root "
-            "or export it in your shell environment."
+            "Missing API key. Set OPENROUTER_API (or OPENROUTER_API_KEY / OPENAI_API_KEY) "
+            "in .env.local at project root or export it in your shell environment."
         )
     return api_key
 
@@ -83,16 +91,19 @@ def load_rohingya_asr_model() -> tuple[Wav2Vec2Processor, Wav2Vec2ForCTC]:
 
 
 def _chat_translate(system_prompt: str, text: str) -> str:
-    client = get_openrouter_client()
-    response = client.chat.completions.create(
-        model=OPENROUTER_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": text},
-        ],
-        max_tokens=1024,
-    )
-    return response.choices[0].message.content.strip()
+    try:
+        client = get_openrouter_client()
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": text},
+            ],
+            max_tokens=1024,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        return text
 
 
 def translate_to_rohingya(text: str) -> str:
@@ -154,20 +165,31 @@ async def detect_objects(file: UploadFile = File(...)):
     label_name = result.names[label_index]
     confidence = float(top_box.conf[0])
     box = top_box.xyxyn[0].tolist()
+
+    # 3.5 Generate a simple example sentence (text) for educational feedback
+    sentence = generate_example_sentences(label_name)
     
     # 4. Generate TTS (Speech) using gTTS
     tts = gTTS(text=label_name, lang='en')
     audio_fp = io.BytesIO()
     tts.write_to_fp(audio_fp)
     audio_fp.seek(0)
+
+    sentence_tts = gTTS(text=sentence, lang='en')
+    sentence_audio_fp = io.BytesIO()
+    sentence_tts.write_to_fp(sentence_audio_fp)
+    sentence_audio_fp.seek(0)
     
     # 5. Convert audio to Base64 string for the JSON response
     speech_base64 = base64.b64encode(audio_fp.read()).decode('utf-8')
+    sentence_speech_base64 = base64.b64encode(sentence_audio_fp.read()).decode('utf-8')
     
     # Return the exact JSON format requested: {word: x, speech: y}
     return {
         "word": label_name,
         "speech": speech_base64,
+        "sentence": sentence,
+        "sentence_speech": sentence_speech_base64,
         "confidence": confidence,
         "box": box
     }
@@ -178,17 +200,27 @@ def english_to_rhg_audio(payload: EnglishToRhgAudioRequest):
     if not payload.text.strip():
         raise HTTPException(status_code=400, detail="`text` cannot be empty.")
 
-    rohingya_text = translate_to_rohingya(payload.text)
-    tts_model, tts_tokenizer = load_tts()
-    inputs = tts_tokenizer(rohingya_text, return_tensors="pt")
+    try:
+        rohingya_text = translate_to_rohingya(payload.text) or payload.text
+    except Exception:
+        rohingya_text = payload.text
 
-    with torch.no_grad():
-        waveform = tts_model(**inputs).waveform
+    try:
+        tts_model, tts_tokenizer = load_tts()
+        inputs = tts_tokenizer(rohingya_text, return_tensors="pt")
 
-    audio = waveform.squeeze().detach().cpu().numpy().astype(np.float32)
-    wav_buffer = io.BytesIO()
-    scipy.io.wavfile.write(wav_buffer, rate=tts_model.config.sampling_rate, data=audio)
-    wav_buffer.seek(0)
+        with torch.no_grad():
+            waveform = tts_model(**inputs).waveform
+
+        audio = waveform.squeeze().detach().cpu().numpy().astype(np.float32)
+        wav_buffer = io.BytesIO()
+        scipy.io.wavfile.write(wav_buffer, rate=tts_model.config.sampling_rate, data=audio)
+        wav_buffer.seek(0)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate Rohingya audio: {exc}",
+        ) from exc
 
     return StreamingResponse(
         wav_buffer,
