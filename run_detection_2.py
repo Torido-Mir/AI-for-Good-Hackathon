@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
 from PIL import Image
 from gtts import gTTS
+from ran_sent_gen import generate_example_sentences
 import uvicorn
 
 app = FastAPI()
@@ -40,20 +41,31 @@ async def detect_objects(file: UploadFile = File(...)):
     label_name = result.names[label_index]
     confidence = float(top_box.conf[0])
     box = top_box.xyxyn[0].tolist()
+
+    # 3.5 Generate a simple example sentence (text) for educational feedback
+    sentence = generate_example_sentences(label_name)
     
     # 4. Generate TTS (Speech) using gTTS
     tts = gTTS(text=label_name, lang='en')
     audio_fp = io.BytesIO()
     tts.write_to_fp(audio_fp)
     audio_fp.seek(0)
+
+    sentence_tts = gTTS(text=sentence, lang='en')
+    sentence_audio_fp = io.BytesIO()
+    sentence_tts.write_to_fp(sentence_audio_fp)
+    sentence_audio_fp.seek(0)
     
     # 5. Convert audio to Base64 string for the JSON response
     speech_base64 = base64.b64encode(audio_fp.read()).decode('utf-8')
+    sentence_speech_base64 = base64.b64encode(sentence_audio_fp.read()).decode('utf-8')
     
     # Return the exact JSON format requested: {word: x, speech: y}
     return {
         "word": label_name,
         "speech": speech_base64,
+        # "sentence": sentence,
+        # "sentence_speech": sentence_speech_base64,
         "confidence": confidence,
         "box": box
     }
