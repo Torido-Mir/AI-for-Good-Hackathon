@@ -1,16 +1,15 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, Text, ActivityIndicator, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import CameraScreen from './src/CameraScreen';
 import ResultScreen from './src/ResultScreen';
-import { loadModel, runDetection } from './src/detector';
+import { runDetection } from './src/detector';
 
 export default function App() {
   const [screen, setScreen] = useState('camera');
   const [photoUri, setPhotoUri] = useState(null);
   const [photoSize, setPhotoSize] = useState({ width: 0, height: 0 });
   const [detections, setDetections] = useState([]);
-  const sessionRef = useRef(null);
 
   const handlePhotoCaptured = useCallback(async (uri, width, height) => {
     setPhotoUri(uri);
@@ -18,12 +17,9 @@ export default function App() {
     setScreen('loading');
 
     try {
-      if (!sessionRef.current) {
-        sessionRef.current = await loadModel();
-      }
-
-      const dets = await runDetection(sessionRef.current, uri, width, height);
-      setDetections(dets);
+      const result = await runDetection(uri);
+      setDetections(result.detections);
+      setPhotoSize({ width: result.imageWidth, height: result.imageHeight });
       setScreen('results');
     } catch (err) {
       console.error('Detection failed:', err);
