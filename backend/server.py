@@ -1,6 +1,8 @@
 import functools
 import io
 import os
+from gtts import gTTS
+import base64
 
 import numpy as np
 import scipy.io.wavfile
@@ -124,30 +126,40 @@ async def health():
     return {"status": "ok", "model": "yolov8n"}
 
 @app.post("/detect")
-async def detect(file: UploadFile = File(...)):
+async def detect_objects(file: UploadFile = File(...)):
+    # 1. Read the image
     contents = await file.read()
-    image = Image.open(io.BytesIO(contents))
-
-    results = model(image, imgsz=640, conf=0.25, iou=0.45)
-
-    detections = []
-    for r in results:
-        for box in r.boxes:
-            x1, y1, x2, y2 = box.xyxy[0].tolist()
-            detections.append({
-                "x1": x1,
-                "y1": y1,
-                "x2": x2,
-                "y2": y2,
-                "confidence": float(box.conf[0]),
-                "classIndex": int(box.cls[0]),
-                "label": model.names[int(box.cls[0])],
-            })
-
+    image = Image.open(io.BytesIO(contents)).convert("RGB")
+    
+    # 2. Run YOLO detection
+    results = model(image)
+    result = results[0]
+    
+    if len(result.boxes) == 0:
+        return {"word": "nothing detected", "speech": "", "confidence": 0, "box": []}
+    
+    # 3. Get the main object (highest confidence)
+    top_box = sorted(result.boxes, key=lambda x: x.conf[0], reverse=True)[0]
+    label_index = int(top_box.cls[0])
+    label_name = result.names[label_index]
+    confidence = float(top_box.conf[0])
+    box = top_box.xyxyn[0].tolist()
+    
+    # 4. Generate TTS (Speech) using gTTS
+    tts = gTTS(text=label_name, lang='en')
+    audio_fp = io.BytesIO()
+    tts.write_to_fp(audio_fp)
+    audio_fp.seek(0)
+    
+    # 5. Convert audio to Base64 string for the JSON response
+    speech_base64 = base64.b64encode(audio_fp.read()).decode('utf-8')
+    
+    # Return the exact JSON format requested: {word: x, speech: y}
     return {
-        "detections": detections,
-        "imageWidth": image.width,
-        "imageHeight": image.height,
+        "word": label_name,
+        "speech": speech_base64,
+        "confidence": confidence,
+        "box": box
     }
 
 

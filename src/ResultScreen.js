@@ -16,11 +16,15 @@ function getColor(classIndex) {
 
 export default function ResultScreen({ photoUri, photoSize, detections, onBack }) {
   const { width: screenWidth } = useWindowDimensions();
-  const imageDisplayWidth = screenWidth;
-  const imageDisplayHeight = (photoSize.height / photoSize.width) * screenWidth;
+  const sourceWidth = photoSize?.width || 1;
+  const sourceHeight = photoSize?.height || 1;
+  const safeDetections = Array.isArray(detections) ? detections : [];
 
-  const scaleX = imageDisplayWidth / photoSize.width;
-  const scaleY = imageDisplayHeight / photoSize.height;
+  const imageDisplayWidth = screenWidth;
+  const imageDisplayHeight = (sourceHeight / sourceWidth) * screenWidth;
+
+  const scaleX = imageDisplayWidth / sourceWidth;
+  const scaleY = imageDisplayHeight / sourceHeight;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -35,12 +39,14 @@ export default function ResultScreen({ photoUri, photoSize, detections, onBack }
           width={imageDisplayWidth}
           height={imageDisplayHeight}
         >
-          {detections.map((det, i) => {
-            const color = getColor(det.classIndex);
+          {safeDetections.map((det, i) => {
+            const color = getColor(det.classIndex || 0);
             const x = det.x1 * scaleX;
             const y = det.y1 * scaleY;
             const w = (det.x2 - det.x1) * scaleX;
             const h = (det.y2 - det.y1) * scaleY;
+            const label = det.label || 'object';
+            const confidenceText = `${Math.round((det.confidence || 0) * 100)}%`;
 
             return (
               <React.Fragment key={i}>
@@ -50,14 +56,14 @@ export default function ResultScreen({ photoUri, photoSize, detections, onBack }
                 />
                 <Rect
                   x={x} y={y - 20}
-                  width={det.label.length * 8 + 40} height={20}
+                  width={label.length * 8 + 40} height={20}
                   fill={color} opacity={0.85}
                 />
                 <SvgText
                   x={x + 4} y={y - 5}
                   fill="#ffffff" fontSize={13} fontWeight="bold"
                 >
-                  {det.label} {Math.round(det.confidence * 100)}%
+                  {label} {confidenceText}
                 </SvgText>
               </React.Fragment>
             );
@@ -67,17 +73,17 @@ export default function ResultScreen({ photoUri, photoSize, detections, onBack }
 
       <View style={styles.detailsContainer}>
         <Text style={styles.summaryText}>
-          {detections.length} object{detections.length !== 1 ? 's' : ''} detected
+          {safeDetections.length} object{safeDetections.length !== 1 ? 's' : ''} detected
         </Text>
         <FlatList
-          data={detections}
+          data={safeDetections}
           keyExtractor={(_, i) => String(i)}
           renderItem={({ item }) => (
             <View style={styles.detectionRow}>
-              <View style={[styles.colorDot, { backgroundColor: getColor(item.classIndex) }]} />
-              <Text style={styles.detectionLabel}>{item.label}</Text>
+              <View style={[styles.colorDot, { backgroundColor: getColor(item.classIndex || 0) }]} />
+              <Text style={styles.detectionLabel}>{item.label || 'object'}</Text>
               <Text style={styles.detectionConf}>
-                {Math.round(item.confidence * 100)}%
+                {Math.round((item.confidence || 0) * 100)}%
               </Text>
             </View>
           )}
@@ -85,7 +91,7 @@ export default function ResultScreen({ photoUri, photoSize, detections, onBack }
       </View>
 
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backButtonText}>Back to Home</Text>
+        <Text style={styles.backButtonText}>Back to Camera</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
