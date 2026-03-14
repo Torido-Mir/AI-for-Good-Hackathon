@@ -119,6 +119,14 @@ export default function App() {
     setScreen('home');
   }, []);
 
+  const handleOpenLanguage = useCallback(() => {
+    if (!Array.isArray(detections) || detections.length === 0) {
+      Alert.alert('No Objects Detected', 'Language screen is available after detecting at least one object.');
+      return;
+    }
+    setScreen('language');
+  }, [detections]);
+
   if (screen === 'loading') {
     return (
       <View style={styles.loadingContainer}>
@@ -137,7 +145,7 @@ export default function App() {
           photoUri={photoUri}
           photoSize={photoSize}
           detections={detections}
-          onNext={() => setScreen('language')}
+          onNext={handleOpenLanguage}
           onBack={handleBackToHome}
         />
       </>

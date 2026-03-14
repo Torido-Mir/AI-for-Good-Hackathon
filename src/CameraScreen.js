@@ -17,10 +17,10 @@ export default function CameraScreen({ onPhotoCaptured, onBack }) {
       <SafeAreaView style={styles.container}>
         <View style={styles.permissionContainer}>
           <Text style={styles.permissionText}>
-            Camera access is needed to detect objects.
+            📷 Camera access is needed to detect objects.
           </Text>
           <TouchableOpacity style={styles.grantButton} onPress={requestPermission}>
-            <Text style={styles.grantButtonText}>Grant Permission</Text>
+            <Text style={styles.grantButtonText}>✅ Grant Permission</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -47,10 +47,10 @@ export default function CameraScreen({ onPhotoCaptured, onBack }) {
           <View style={styles.topBar}>
             {onBack ? (
               <TouchableOpacity style={styles.backButton} onPress={onBack}>
-                <Text style={styles.backButtonText}>Back</Text>
+                <Text style={styles.backButtonText}>⬅️ Back</Text>
               </TouchableOpacity>
             ) : null}
-            <Text style={styles.title}>Object Detector</Text>
+            <Text style={styles.title}>🔎 Object Detector</Text>
             {onBack ? <View style={styles.backButtonSpacer} /> : null}
           </View>
           <View style={styles.bottomBar}>

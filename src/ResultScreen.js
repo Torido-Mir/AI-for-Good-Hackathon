@@ -25,6 +25,7 @@ export default function ResultScreen({ photoUri, photoSize, detections, onBack, 
 
   const scaleX = imageDisplayWidth / sourceWidth;
   const scaleY = imageDisplayHeight / sourceHeight;
+  const isNextDisabled = safeDetections.length === 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,7 +74,7 @@ export default function ResultScreen({ photoUri, photoSize, detections, onBack, 
 
       <View style={styles.detailsContainer}>
         <Text style={styles.summaryText}>
-          {safeDetections.length} object{safeDetections.length !== 1 ? 's' : ''} detected
+          🎯 {safeDetections.length} object{safeDetections.length !== 1 ? 's' : ''} detected
         </Text>
         <FlatList
           data={safeDetections}
@@ -91,11 +92,15 @@ export default function ResultScreen({ photoUri, photoSize, detections, onBack, 
       </View>
 
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backButtonText}>Back to Camera</Text>
+        <Text style={styles.backButtonText}>⬅️ Back to Camera</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.nextButton} onPress={onNext}>
-        <Text style={styles.nextButtonText}>&gt;&gt;</Text>
+      <TouchableOpacity
+        style={[styles.nextButton, isNextDisabled && styles.nextButtonDisabled]}
+        onPress={onNext}
+        disabled={isNextDisabled}
+      >
+        <Text style={styles.nextButtonText}>{isNextDisabled ? '🚫' : '🗣️'}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -137,6 +142,9 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  nextButtonDisabled: {
+    backgroundColor: '#6d7280',
   },
   nextButtonText: {
     color: '#ffffff',

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  Image,
 } from 'react-native';
 import * as Audio from 'expo-audio';
 import {
@@ -15,7 +16,7 @@ import {
 
 async function playUri(uri, soundRef) {
   if (!uri) {
-    throw new Error('No audio available.');
+    throw new Error('🔇 No audio available.');
   }
 
   if (!soundRef.current) {
@@ -54,7 +55,7 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
       const englishAudioUri = englishSpeechBase64ToUri(englishSpeechBase64);
       await playUri(englishAudioUri, soundRef);
     } catch (err) {
-      Alert.alert('Audio Error', err.message || 'Could not play English audio.');
+      Alert.alert('🔊 Audio Error', err.message || 'Could not play English audio.');
     }
   }, [englishSpeechBase64]);
 
@@ -72,7 +73,7 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
 
       await playUri(audioUri, soundRef);
     } catch (err) {
-      Alert.alert('Audio Error', err.message || 'Could not play Rohingya audio.');
+      Alert.alert('🔊 Audio Error', err.message || 'Could not play Rohingya audio.');
     } finally {
       setLoadingRohingya(false);
     }
@@ -81,16 +82,16 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.heading}>Detected Object</Text>
+        <Text style={styles.heading}>🎯 Detected Object</Text>
         <Text style={styles.objectWord}>{englishWord}</Text>
 
         <View style={styles.infoCard}>
-          <Text style={styles.label}>English word</Text>
+          <Text style={styles.label}>🇨🇦 English word</Text>
           <Text style={styles.value}>{englishWord}</Text>
         </View>
 
         <TouchableOpacity style={styles.primaryButton} onPress={handlePlayEnglish}>
-          <Text style={styles.buttonText}>Play English Sound</Text>
+          <Text style={styles.buttonText}>🔊 Play English Sound</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -99,20 +100,23 @@ export default function LanguageScreen({ objectWord, englishSpeechBase64, onBack
           disabled={loadingRohingya}
         >
           <Text style={styles.buttonText}>
-            {loadingRohingya ? 'Preparing Rohingya Audio...' : 'Say Sentence in Rohingya'}
+            {loadingRohingya ? '⏳ Preparing Rohingya Audio...' : '🗣️ Say Sentence in Rohingya'}
           </Text>
         </TouchableOpacity>
 
         {rohingyaText ? (
           <View style={styles.infoCard}>
-            <Text style={styles.label}>Rohingya text</Text>
+            <View style={styles.labelRow}>
+              <Image source={require('../assets/rhg_flag.png')} style={styles.rhgFlag} resizeMode="contain" />
+              <Text style={styles.label}>Rohingya text</Text>
+            </View>
             <Text style={styles.value}>{rohingyaText}</Text>
           </View>
         ) : null}
       </View>
 
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backButtonText}>Back to Results</Text>
+        <Text style={styles.backButtonText}>⬅️ Back to Results</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -149,6 +153,17 @@ const styles = StyleSheet.create({
     color: '#c9c9d6',
     fontSize: 14,
     marginBottom: 4,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 6,
+    marginBottom: 4,
+  },
+  rhgFlag: {
+    width: 20,
+    height: 14,
+    borderRadius: 2,
   },
   value: {
     color: '#ffffff',
