@@ -31,7 +31,6 @@ app.add_middleware(
 
 model = YOLO("yolov8n.pt")
 
-
 class EnglishToRhgAudioRequest(BaseModel):
     text: str
 
@@ -120,6 +119,9 @@ def _to_float32_mono(data: np.ndarray) -> np.ndarray:
         data = data.astype(np.float32)
     return data
 
+@app.get("/")
+async def health():
+    return {"status": "ok", "model": "yolov8n"}
 
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
